@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 import React, { useState, useEffect } from 'react';
 import { GitCommit, Star, FolderGit2, Flame, User } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -25,9 +26,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     const username = 'parashkhadka21';
+    const cacheBuster = `?t=${new Date().getTime()}`;
 
-    // 1. Fetch High-Level Profile Info
-    fetch(`https://api.github.com/users/${username}`)
+    // 1. Fetch Profile Info
+    fetch(`https://api.github.com/users/${username}${cacheBuster}`)
       .then((res) => res.json())
       .then((data) => {
         if (data && !data.message) {
@@ -42,8 +44,8 @@ export default function Dashboard() {
       })
       .catch((err) => console.error("Error fetching profile:", err));
 
-    // 2. Fetch Repos to Sum Real Star Metrics
-    fetch(`https://api.github.com/users/${username}/repos?per_page=100`)
+    // 2. Fetch Repos for Stars
+    fetch(`https://api.github.com/users/${username}/repos?per_page=100&t=${new Date().getTime()}`)
       .then((res) => res.json())
       .then((repos) => {
         if (Array.isArray(repos)) {
@@ -53,23 +55,20 @@ export default function Dashboard() {
       })
       .catch((err) => console.error("Error fetching repos:", err));
 
-    // 3. Fetch Public Events to Extract Live Commit Frequencies
-    fetch(`https://api.github.com/users/${username}/events`)
+    // 3. Fetch Recent Events
+    fetch(`https://api.github.com/users/${username}/events${cacheBuster}`)
       .then((res) => res.json())
       .then((events) => {
         if (Array.isArray(events)) {
-          // Initialize empty counter map for days of week
           const dayMap = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
           const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
           let totalCommitCounter = 0;
 
-          // Filter out push events from your log feed
           events.forEach(event => {
             if (event.type === 'PushEvent' && event.payload && event.payload.commits) {
               const commitCount = event.payload.commits.length;
               totalCommitCounter += commitCount;
 
-              // Parse out the weekday name of the commit
               const eventDate = new Date(event.created_at);
               const dayName = dayNames[eventDate.getDay()];
               if (dayMap[dayName] !== undefined) {
@@ -78,7 +77,6 @@ export default function Dashboard() {
             }
           });
 
-          // Convert processed counters map back to chart array matrix
           const updatedChart = [
             { day: 'Mon', commits: dayMap.Mon },
             { day: 'Tue', commits: dayMap.Tue },
@@ -141,10 +139,10 @@ export default function Dashboard() {
 
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Followers</p>
-            <h3 className="text-2xl font-bold text-white mt-2">{profile.followers}</h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Commits (2026)</p>
+            <h3 className="text-2xl font-bold text-white mt-2">61</h3>
           </div>
-          <div className="bg-rose-500/10 p-3 rounded-xl text-rose-400"><User size={24} /></div>
+          <div className="bg-rose-500/10 p-3 rounded-xl text-rose-400"><Flame size={24} /></div>
         </div>
       </div>
 
